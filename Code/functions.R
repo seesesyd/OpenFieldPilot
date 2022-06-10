@@ -284,8 +284,112 @@ plot_hull_cent_animate <- function(xy.df, FRAME_MIN, FRAME_MAX){
 plot_hull_cent_animate(xy.df, 50, 100)
 
 ##### 5 - PLOT INDIVIDUAL LINES TO CENTROID
+cent_dist_animate <- function(xy.df, FRAME_MIN, FRAME_MAX){
+  xy.dfsim <- subset(xy.df[,2:3])
+  out <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    xy.dfrandtime <- xy.df[xy.df$Frame == i,]
+    xy.dfsim <- subset(xy.dfrandtime[,2:3])
+    
+    verts <- chull(xy.dfsim)
+    poly <- xy.dfsim[verts,]
+    
+    pts <- as.data.frame(xy.dfsim)
+    
+    poly <- rbind(poly, poly[1, ])
+    poly <- as.data.frame(poly)
+    n <- nrow(poly)
+    x <- rev(poly[, 1])
+    y <- rev(poly[, 2])
+    w <- 1:(n-1)
+    
+    poly$A <- sum(c(x[w] * y[w+1] - x[w+1] * y[w])) / 2
+    
+    poly$Frame <- i
+    
+    out[[i]] <- poly
+    
+  }
+  
+  out <- data.table::rbindlist(out)
+  
+  points <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    xy.dfrandtime <- xy.df[xy.df$Frame == i,]
+    xy.dfsim <- subset(xy.dfrandtime[,2:3])
+    
+    crk <- xy.dfsim
+    
+    pts <- as.data.frame(xy.dfsim)
+    
+    crk <- as.data.frame(crk)
+    
+    crk$id <- xy.dfrandtime$id
+    
+    crk$Frame <- i
+    
+    points[[i]] <- crk
+  }
+  
+  points <- data.table::rbindlist(points)
+  
+  cents <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    xy.dfrandtime <- xy.df[xy.df$Frame == i,]
+    xy.dfsim <- subset(xy.dfrandtime[,2:4])
+    
+    verts <- chull(xy.dfsim)
+    poly <- xy.dfsim[verts,]
+    
+    poly <- rbind(poly, poly[1, ])
+    n <- nrow(poly)
+    x <- rev(poly[, 1])
+    y <- rev(poly[, 2])
+    w <- 1:(n-1)
+    
+    xy.dfsim$A <- sum(c(x[w] * y[w+1] - x[w+1] * y[w])) / 2
+    xy.dfsim$Cx <- sum((x[w] + x[w+1]) * (x[w] * y[w+1] - x[w+1] * y[w])) / (6 * xy.dfsim$A)
+    xy.dfsim$Cy <- sum((y[w] + y[w+1]) * (x[w] * y[w+1] - x[w+1] * y[w])) / (6 * xy.dfsim$A)
+    
+    crj <- xy.dfsim
+    
+    pts <- as.data.frame(xy.dfsim)
+    
+    crj <- as.data.frame(crj)
+    
+    crj$Frame <- i
+    
+    cents[[i]] <- crj
+  }
+  
+  cents <- data.table::rbindlist(cents)
+  
+  dists <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    centsprogtime <- cents[cents$Frame == i,]
+    centsprogtime$distance = sqrt( abs (centsprogtime$x - centsprogtime$Cx )^2 + abs( centsprogtime$y - centsprogtime$Cy )^2 )
+    crh <- centsprogtime
+    crh <- as.data.frame(crh)
+    crh$Frame <- i
+    dists[[i]] <- crh
+  }
+  dists <- data.table::rbindlist(dists)
+  
+  ggplot()+
+    geom_point(data = points, aes(x,y))+
+    geom_point(data = cents, aes(Cx, Cy), shape = "asterisk", colour = "red", size = 3.5)+
+    geom_segment(data = dists, aes(
+      x = x,
+      y = y, 
+      xend = Cx, 
+      yend = Cy
+    )
+    ) +
+    transition_time(Frame)+
+    theme_classic()
+}
 
-
+cent_dist_animate(xy.df, 50, 150)
 
 ##### 6 -  PLOT INDIVIDUAL DISTANCES FROM CENTROID #####
 cent_dist <- function(xy.df, FRAME_MIN, FRAME_MAX){
