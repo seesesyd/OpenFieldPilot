@@ -1,0 +1,63 @@
+plot_hull_animate <- function(xy.df, FRAME_MIN, FRAME_MAX){
+  xy.dfsim <- subset(xy.df[,2:3])
+  out <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    xy.dfrandtime <- xy.df[xy.df$Frame == i,]
+    xy.dfsim <- subset(xy.dfrandtime[,2:3])
+    
+    verts <- chull(xy.dfsim)
+    poly <- xy.dfsim[verts,]
+    
+    pts <- as.data.frame(xy.dfsim)
+    
+    poly <- rbind(poly, poly[1, ])
+    poly <- as.data.frame(poly)
+    n <- nrow(poly)
+    x <- rev(poly[, 1])
+    y <- rev(poly[, 2])
+    w <- 1:(n-1)
+    
+    poly$A <- sum(c(x[w] * y[w+1] - x[w+1] * y[w])) / 2
+    
+    poly$Frame <- i
+    
+    out[[i]] <- poly
+    
+  }
+  
+  out <- data.table::rbindlist(out)
+  
+  points <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    xy.dfrandtime <- xy.df[xy.df$Frame == i,]
+    xy.dfsim <- subset(xy.dfrandtime[,2:3])
+    
+    crk <- xy.dfsim
+    
+    pts <- as.data.frame(xy.dfsim)
+    
+    crk <- as.data.frame(crk)
+    
+    crk$id <- xy.dfrandtime$id
+    
+    crk$Frame <- i
+    
+    points[[i]] <- crk
+  }
+  
+  points <- data.table::rbindlist(points)
+  
+  ggplot()+
+    geom_point(data = points, aes(x,y, color = factor(id)))+
+    geom_polygon(
+      aes(x,y),
+      color="seagreen",
+      fill="lightseagreen",
+      alpha = 0.3, data = out,
+      show.legend = FALSE)+
+    scale_y_continuous(limits = c(0, 1000)) +
+    scale_x_continuous(limits = c(0, 1000)) +
+    scale_color_manual(values = c("#FFD833", "#FFBA33", "#FF5733", "#C70039", "#900C3F", "#581845")) +
+    transition_time(Frame)+
+    theme_classic()
+}
