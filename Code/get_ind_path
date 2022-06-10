@@ -1,0 +1,13 @@
+get_ind_path <- function(df, ID, FRAME_MIN, FRAME_MAX){
+  df %>% 
+    filter(id==ID) %>%
+    filter(Frame > FRAME_MIN | Frame < FRAME_MAX) %>%
+    ggplot(aes(x, y, label=id)) +
+    geom_point(size=0.5) +
+    geom_segment(aes(
+      xend=c(tail(x, n=-1), NA), 
+      yend=c(tail(y, n=-1), NA)
+    )
+    ) +
+    theme_void()
+}
