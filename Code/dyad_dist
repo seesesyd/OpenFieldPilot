@@ -1,0 +1,56 @@
+dyad_dist <- function(xy.df, ID1, ID2, FRAME_MIN, FRAME_MAX){
+  library(gganimate)
+  library(gifski)
+  library(transformr)
+  library(tidyverse)
+  library(ggplot2)
+  
+  points <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    xy.dfrandtime <- xy.df[xy.df$Frame == i,]
+    xy.dfsim <- subset(xy.dfrandtime[,2:3])
+    
+    crk <- xy.dfsim
+    
+    pts <- as.data.frame(xy.dfsim)
+    
+    crk <- as.data.frame(crk)
+    
+    crk$id <- xy.dfrandtime$id
+    
+    crk$Frame <- i
+    
+    points[[i]] <- crk
+  }
+  
+  points <- data.table::rbindlist(points)
+  
+  dists2 <- NULL
+  for (i in FRAME_MIN:FRAME_MAX) {
+    pointsprogtime <- points[points$Frame == i,]
+    
+    pointsprogtime$Ax <- pointsprogtime$x[ pointsprogtime$id == ID1 ]
+    pointsprogtime$Bx <- pointsprogtime$x[ pointsprogtime$id == ID2 ]
+    pointsprogtime$Ay <- pointsprogtime$y[ pointsprogtime$id == ID1 ]
+    pointsprogtime$By <- pointsprogtime$y[ pointsprogtime$id == ID2 ]
+    
+    pointsprogtime$distance = sqrt( abs (pointsprogtime$Ax - pointsprogtime$Bx )^2 + abs( pointsprogtime$Ay - pointsprogtime$By )^2 )
+    
+    cri <- pointsprogtime
+    
+    cri <- as.data.frame(cri)
+    
+    cri$Frame <- i
+    
+    dists2[[i]] <- cri
+  }
+  
+  dists2 <- data.table::rbindlist(dists2)
+  
+  ggplot()+
+    geom_point(data = dists2, aes(Frame,distance))+
+    transition_time(Frame)+
+    shadow_mark()+
+    theme_classic()
+  
+}
