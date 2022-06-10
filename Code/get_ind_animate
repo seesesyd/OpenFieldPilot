@@ -1,0 +1,10 @@
+get_ind_animate <- function(df, ID, FRAME_MIN, FRAME_MAX){
+  z <- df %>%
+    filter(id == ID | Frame > FRAME_MIN | Frame < FRAME_MAX) 
+  
+  ggplot()+
+    geom_point(data = z, aes(x,y))+
+    transition_time(Frame)+
+    shadow_wake(wake_length = 0.3, alpha = 0.7)+
+    theme_classic() + theme(legend.position = "none")
+}
